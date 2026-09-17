@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import TopNav from "../components/TopNav";
 import { getSession } from "../../lib/auth";
-
-const API_URL = "http://localhost:8000";
+import { API_URL } from "../../lib/api";
 
 export default function CustomerPage() {
   const [caseData, setCaseData] = useState(null);

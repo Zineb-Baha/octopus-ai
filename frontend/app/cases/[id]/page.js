@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import TopNav from "../../components/TopNav";
+import { API_URL } from "../../../lib/api";
 
 export default function CaseDetailPage() {
 
@@ -25,9 +26,6 @@ export default function CaseDetailPage() {
   const [approved, setApproved] = useState(false);
 
   const [loading, setLoading] = useState(true);
-
-  const API_URL =
-    "http://localhost:8000";
 
   useEffect(() => {
 

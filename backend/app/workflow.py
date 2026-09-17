@@ -11,6 +11,8 @@ from .rules import apply_business_rules
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+USE_GEMINI = os.getenv("USE_GEMINI", "false").lower() == "true"
 gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 
@@ -26,6 +28,7 @@ class WorkflowState(TypedDict, total=False):
     issues: list
     review_required: bool
     proposed_response: str
+    response_source: str
 
 
 def retrieve_evidence(state: WorkflowState):
@@ -87,6 +90,51 @@ def analyze_evidence(state: WorkflowState):
     }
 
 
+def generate_local_response(state: WorkflowState):
+
+    customer = state["customer"]
+    customer_message = state["customer_message"].lower()
+    job = state["job"]
+    language = customer.get("preferred_language", "English")
+
+    if "collect" in customer_message and state["review_required"]:
+        if language == "French":
+            return (
+                "Votre véhicule est prêt pour la collecte selon le système, "
+                "mais le contrôle qualité est encore en attente. "
+                "Un conseiller doit confirmer la disponibilité avant la collecte."
+            )
+
+        return (
+            "The system shows your vehicle is ready for collection, but the "
+            "quality check is still pending. An adviser must confirm availability "
+            "before collection."
+        )
+
+    if "booking" in customer_message or "appointment" in customer_message:
+        if language == "French":
+            return (
+                "Votre demande de modification du rendez-vous a bien été reçue. "
+                "Un conseiller vous contactera pour confirmer le nouveau créneau."
+            )
+
+        return (
+            "Your request to change the service booking has been received. "
+            "An adviser will contact you to confirm a new appointment slot."
+        )
+
+    if language == "French":
+        return (
+            f"Votre demande concernant le service ({job.get('id', 'votre dossier')}) "
+            "a été reçue. Un conseiller vous répondra prochainement."
+        )
+
+    return (
+        f"Your service request regarding {job.get('id', 'your case')} has been "
+        "received. An adviser will respond shortly."
+    )
+
+
 def generate_response(state: WorkflowState):
 
     customer = state["customer"]
@@ -95,10 +143,11 @@ def generate_response(state: WorkflowState):
     job = state["job"]
     issues = state["issues"]
 
-    if gemini_client is None:
-        raise RuntimeError(
-            "GEMINI_API_KEY is missing. Add it to backend/.env and restart the API."
-        )
+    if not USE_GEMINI or gemini_client is None:
+        return {
+            "proposed_response": generate_local_response(state),
+            "response_source": "local"
+        }
 
     prompt = f"""
 You are a vehicle service customer-support adviser.
@@ -130,17 +179,22 @@ Rules:
 - Return only the customer-facing response, with no analysis or heading.
 """
 
-    result = gemini_client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt
-    )
-    response = (result.text or "").strip()
-
-    if not response:
-        raise RuntimeError("Gemini returned an empty response.")
+    try:
+        result = gemini_client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt
+        )
+    except Exception as error:
+        if "429" in str(error) or "RESOURCE_EXHAUSTED" in str(error):
+            return {
+                "proposed_response": generate_local_response(state),
+                "response_source": "local"
+            }
+        raise
 
     return {
-        "proposed_response": response
+        "proposed_response": result.text,
+        "response_source": "gemini"
     }
 
 

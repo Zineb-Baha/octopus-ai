@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import TopNav from "../components/TopNav";
-
-const API_URL = "http://localhost:8000";
+import { API_URL } from "../../lib/api";
 
 export default function AdminPage() {
   const [cases, setCases] = useState([]);

@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,9 +39,19 @@ app = FastAPI(
 )
 
 
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "FRONTEND_URL",
+        "http://localhost:3000,http://localhost:3001"
+    ).split(",")
+    if origin.strip()
+]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
@@ -190,5 +201,6 @@ def analyze_case(case_id: str, request: AnalyzeRequest):
         "job": result["job"],
         "issues": result["issues"],
         "review_required": result["review_required"],
-        "proposed_response": result["proposed_response"]
+        "proposed_response": result["proposed_response"],
+        "response_source": result.get("response_source", "gemini")
     }
