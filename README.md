@@ -123,7 +123,6 @@ The response can then be reviewed and edited by the service adviser.
 ### Frontend
 
 * Next.js
-* React
 * JavaScript
 * CSS
 
