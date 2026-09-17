@@ -80,7 +80,8 @@ export default function LoginPage() {
           <strong>Demo accounts</strong>
           <span>Admin: admin@serviceflow.ai / admin123</span>
           <span>Team: team@serviceflow.ai / team123</span>
-          <span>Customer: customer@serviceflow.ai / customer123</span>
+          <span>Customer CUS-A: customer@serviceflow.ai / customer123</span>
+          <span>Customer CUS-B: customer-b@serviceflow.ai / customerb123</span>
         </div>
       </div>
     </main>

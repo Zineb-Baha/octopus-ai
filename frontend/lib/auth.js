@@ -20,6 +20,14 @@ export const DEMO_ACCOUNTS = [
     role: "customer",
     customerId: "CUS-A",
     initials: "CA"
+  },
+  {
+    email: "customer-b@serviceflow.ai",
+    password: "customerb123",
+    name: "Customer CUS-B",
+    role: "customer",
+    customerId: "CUS-B",
+    initials: "CB"
   }
 ];
 
